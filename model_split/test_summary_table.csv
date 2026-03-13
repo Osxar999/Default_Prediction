@@ -1,0 +1,11 @@
+,ML Model,Baseline (strict),Baseline (conservative)
+AUC-ROC,0.728,0.7218,
+Precision (default),0.4156,0.6207,0.4087
+Recall (default),0.8807,0.3303,0.7798
+F1 (default),0.5647,0.4311,0.5363
+FPR,0.5212,0.0849,0.4749
+FNR,0.1193,0.6697,0.2202
+TP,96.0,36.0,85.0
+FP,135.0,22.0,123.0
+TN,124.0,237.0,136.0
+FN,13.0,73.0,24.0
