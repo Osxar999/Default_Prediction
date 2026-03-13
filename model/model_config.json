@@ -1,7 +1,7 @@
 {
   "best_model_name": "Logistic Regression (scaled)",
   "best_data_type": "scaled",
-  "optimal_threshold": 0.48999999999999977,
+  "optimal_threshold": 0.4999999999999998,
   "feature_cols": [
     "stated_monthly_income",
     "loan_amount",
@@ -19,6 +19,6 @@
     "low_balance",
     "employment_encoded"
   ],
-  "auc_roc": 0.7450649876704638,
+  "auc_roc": 0.7450891492975362,
   "bl_auc": 0.7063900397245575
 }
