@@ -118,7 +118,7 @@ This script:
   - Score distributions by outcome.
 - Computes permutation importance and model‑based feature importance.
 - Produces explainability plots:
-  - `pictures/02_evaluation.png` – evaluation curves.
+  - `pictures/02_evaluation_full.png` – evaluation curves.
   - `pictures/03_explainability.png` – feature importance and permutation importance.
 - Prints **sample per‑applicant explanations** that translate features into reasons (e.g. income misrepresentation, low balance, high withdrawal ratio).
 
@@ -269,6 +269,4 @@ This script is the split‑aware counterpart of `fairness.py` and focuses on **h
 - For **final reporting and fairness claims**:
   - Run: `generate_data.py` → `eda_feature_engineering.py` → `training_split.py`
     → `evaluation_split.py` → `fairness_split.py`.
-
-The split pipeline should be your primary source of truth for performance and fairness, while the full‑dataset pipeline is best used for exploration, debugging, and richer explainability views. 
 
