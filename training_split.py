@@ -115,6 +115,11 @@ train_idx, val_idx = train_test_split(
     stratify=y.iloc[trainval_idx]
 )
 
+np.save(os.path.join("model_split", "trainval_indices.npy"), trainval_idx)
+np.save(os.path.join("model_split", "test_indices.npy"), test_idx)
+print("Saved: model_split/trainval_indices.npy")
+print("Saved: model_split/test_indices.npy")
+
 X_train = X.iloc[train_idx].copy()
 y_train = y.iloc[train_idx].copy()
 
