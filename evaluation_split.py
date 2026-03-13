@@ -1,4 +1,5 @@
 import os
+import sys
 import json
 import warnings
 import joblib
@@ -160,46 +161,20 @@ model_dir = "model_split"
 pictures_dir = "pictures"
 os.makedirs(pictures_dir, exist_ok=True)
 
-# Full-data deployment outputs
-model_outputs_df = pd.read_csv(os.path.join(model_dir, "model_outputs.csv"))
-X = pd.read_csv(os.path.join(data_dir, "features.csv"))
-
-# Saved deployment model
-final_model = joblib.load(os.path.join(model_dir, "trained_model.joblib"))
-
+# Load model config (for threshold, names, and AUCs) and features
 with open(os.path.join(model_dir, "model_config.json"), "r") as f:
     config = json.load(f)
 
 feature_cols = config["feature_cols"]
 optimal_threshold = config["optimal_threshold"]
 best_model_name = config["best_model_name"]
-
-ml_auc_full = config.get("auc_roc_full")
 ml_auc_test = config.get("auc_roc_test")
-bl_auc_full = config.get("bl_auc_full")
 split_sizes = config.get("split_sizes", {})
-
-# Build merged dataframe for robust explanations
-eval_df = build_eval_dataframe(model_outputs_df, X, feature_cols)
-
-# Full-data deployment fields
-y_full = eval_df["target"]
-y_prob_full = eval_df["y_prob"].values
-y_pred_full = eval_df["y_pred"].values
-
-baseline_strict_full = (eval_df["rule_based_decision"] == "denied").astype(int)
-baseline_conservative_full = (eval_df["rule_based_decision"] != "approved").astype(int)
-bl_prob_full = 1 - eval_df["rule_based_score"].values / 100
 
 print(f"Model: {best_model_name}")
 print(f"Threshold: {optimal_threshold:.2f}")
-if ml_auc_full is not None:
-    print(f"AUC (full-data deployment model): {ml_auc_full:.4f}")
-else:
-    print(f"AUC (full data, recomputed): {roc_auc_score(y_full, y_prob_full):.4f}")
 if ml_auc_test is not None:
     print(f"AUC (held-out test): {ml_auc_test:.4f}")
-print(f"Applicants in full-data deployment outputs: {len(eval_df)}")
 if split_sizes:
     print(
         f"Split sizes - train: {split_sizes.get('train')}, "
@@ -355,202 +330,6 @@ if has_test_outputs:
     print(classification_report(y_test, baseline_conservative_test, target_names=["repaid", "defaulted"]))
 
 
-# ============================================================================
-# 3. FULL-DATA DEPLOYMENT PLOTS
-# ============================================================================
-
-print("\n" + "=" * 70)
-print("SECTION 2: FULL-DATA DEPLOYMENT PLOTS")
-print("=" * 70)
-
-fig, axes = plt.subplots(2, 3, figsize=(18, 11))
-fig.suptitle(
-    "Deployment Model Evaluation (trained after split-based selection)",
-    fontsize=16,
-    fontweight="bold",
-)
-
-# 1. Confusion matrix — full deployment model
-plot_confusion(
-    axes[0, 0],
-    y_full,
-    y_pred_full,
-    f"ML Deployment Model (threshold={optimal_threshold:.2f})",
-    "Blues",
-)
-
-# 2. Confusion matrix — baseline strict
-plot_confusion(
-    axes[0, 1],
-    y_full,
-    baseline_strict_full,
-    "Rule-Based Baseline (strict: deny only)",
-    "Oranges",
-)
-
-# 3. ROC
-fpr_ml_full, tpr_ml_full, _ = roc_curve(y_full, y_prob_full)
-fpr_bl_full, tpr_bl_full, _ = roc_curve(y_full, bl_prob_full)
-auc_ml_full = roc_auc_score(y_full, y_prob_full)
-auc_bl_full = bl_auc_full if bl_auc_full is not None else roc_auc_score(y_full, bl_prob_full)
-
-axes[0, 2].plot(
-    fpr_ml_full, tpr_ml_full, linewidth=2, label=f"ML Model (AUC={auc_ml_full:.3f})"
-)
-axes[0, 2].plot(
-    fpr_bl_full, tpr_bl_full, "r--", linewidth=2, label=f"Rule-Based (AUC={auc_bl_full:.3f})"
-)
-axes[0, 2].plot([0, 1], [0, 1], "k:", alpha=0.3)
-axes[0, 2].set_title("ROC Curves (Full Data)", fontweight="bold")
-axes[0, 2].set_xlabel("False Positive Rate")
-axes[0, 2].set_ylabel("True Positive Rate")
-axes[0, 2].legend()
-
-# 4. PR
-prec_ml_full, rec_ml_full, _ = precision_recall_curve(y_full, y_prob_full)
-prec_bl_full, rec_bl_full, _ = precision_recall_curve(y_full, bl_prob_full)
-ap_ml_full = average_precision_score(y_full, y_prob_full)
-ap_bl_full = average_precision_score(y_full, bl_prob_full)
-
-axes[1, 0].plot(
-    rec_ml_full, prec_ml_full, linewidth=2, label=f"ML (AP={ap_ml_full:.3f})"
-)
-axes[1, 0].plot(
-    rec_bl_full, prec_bl_full, "r--", linewidth=2, label=f"Rule (AP={ap_bl_full:.3f})"
-)
-axes[1, 0].set_title("Precision-Recall Curves (Full Data)", fontweight="bold")
-axes[1, 0].set_xlabel("Recall")
-axes[1, 0].set_ylabel("Precision")
-axes[1, 0].legend()
-
-# 5. Threshold vs F1 on full data
-thresholds = np.arange(0.10, 0.90, 0.01)
-full_f1_scores = [f1_score(y_full, (y_prob_full >= t).astype(int)) for t in thresholds]
-axes[1, 1].plot(thresholds, full_f1_scores, linewidth=2)
-axes[1, 1].axvline(
-    optimal_threshold,
-    color="r",
-    linestyle="--",
-    label=f"Chosen on val: {optimal_threshold:.2f}",
-)
-axes[1, 1].set_title("F1 vs Threshold (Full Data)", fontweight="bold")
-axes[1, 1].set_xlabel("Threshold")
-axes[1, 1].set_ylabel("F1 Score (default class)")
-axes[1, 1].legend()
-
-# 6. Score distributions on full data
-axes[1, 2].hist(
-    y_prob_full[y_full == 0],
-    bins=40,
-    alpha=0.6,
-    color="#2ecc71",
-    label="Repaid",
-    density=True,
-)
-axes[1, 2].hist(
-    y_prob_full[y_full == 1],
-    bins=40,
-    alpha=0.6,
-    color="#e74c3c",
-    label="Defaulted",
-    density=True,
-)
-axes[1, 2].axvline(
-    optimal_threshold,
-    color="black",
-    linestyle="--",
-    label=f"Threshold: {optimal_threshold:.2f}",
-)
-axes[1, 2].set_title("Score Distribution (Full Data)", fontweight="bold")
-axes[1, 2].set_xlabel("Predicted Default Probability")
-axes[1, 2].legend()
-
-plt.tight_layout()
-full_eval_png = os.path.join(pictures_dir, "02_evaluation.png")
-plt.savefig(full_eval_png, dpi=150, bbox_inches="tight")
-plt.close()
-print(f"Saved: {full_eval_png}")
-
-
-# ============================================================================
-# 4. EXPLAINABILITY (FULL DEPLOYMENT MODEL)
-# ============================================================================
-
-print("\n" + "=" * 70)
-print("SECTION 3: MODEL EXPLAINABILITY (FULL DEPLOYMENT MODEL)")
-print("=" * 70)
-
-# Permutation importance on full data using deployment model
-perm_imp = permutation_importance(
-    final_model,
-    X,
-    y_full,
-    n_repeats=10,
-    random_state=42,
-    scoring="roc_auc",
-)
-
-perm_imp_df = pd.DataFrame(
-    {
-        "feature": feature_cols,
-        "importance_mean": perm_imp.importances_mean,
-        "importance_std": perm_imp.importances_std,
-    }
-).sort_values("importance_mean", ascending=False)
-
-print("\n--- Permutation Importance (AUC-ROC) ---")
-print(perm_imp_df.to_string(index=False))
-
-feat_imp, imp_label = get_feature_importance_series(
-    final_model, feature_cols, perm_imp_df=perm_imp_df
-)
-
-fig, axes = plt.subplots(1, 2, figsize=(18, 8))
-fig.suptitle(
-    "Model Explainability (Deployment Model from Split-Based Training)",
-    fontsize=16,
-    fontweight="bold",
-)
-
-feat_imp.plot(kind="barh", ax=axes[0], color="steelblue", edgecolor="white")
-axes[0].set_title(f"Feature Importances ({imp_label})", fontweight="bold")
-axes[0].set_xlabel("Importance")
-
-perm_sorted = perm_imp_df.sort_values("importance_mean", ascending=True)
-axes[1].barh(
-    perm_sorted["feature"],
-    perm_sorted["importance_mean"],
-    xerr=perm_sorted["importance_std"],
-    color="coral",
-    edgecolor="white",
-)
-axes[1].set_title("Permutation Importance (AUC-ROC)", fontweight="bold")
-axes[1].set_xlabel("Mean Decrease in AUC")
-
-plt.tight_layout()
-expl_png_path = os.path.join(pictures_dir, "03_explainability.png")
-plt.savefig(expl_png_path, dpi=150, bbox_inches="tight")
-plt.close()
-print(f"\nSaved: {expl_png_path}")
-
-
-# ============================================================================
-# 5. SAMPLE INDIVIDUAL EXPLANATIONS
-# ============================================================================
-
-print("\n--- Sample Individual Explanations ---")
-
-sample_default = eval_df[eval_df["target"] == 1].iloc[0]
-sample_repaid = eval_df[eval_df["target"] == 0].iloc[0]
-
-print("\n" + explain_prediction(sample_default, final_model, feature_cols, optimal_threshold))
-print("\n" + explain_prediction(sample_repaid, final_model, feature_cols, optimal_threshold))
-
-
-# ============================================================================
-# 6. OPTIONAL: SAVE TEST SUMMARY TABLE
-# ============================================================================
-
 if has_test_outputs:
     ml_test_stats = compute_confusion_metrics(y_test, y_pred_test)
     strict_test_stats = compute_confusion_metrics(y_test, baseline_strict_test)
@@ -619,7 +398,9 @@ if has_test_outputs:
     summary_table.round(4).to_csv(test_summary_path)
     print(f"\nSaved: {test_summary_path}")
 
-
-print("\n" + "=" * 70)
-print("EVALUATION & EXPLAINABILITY COMPLETE")
-print("=" * 70)
+    # This script is dedicated to held-out test evaluation only.
+    # Skip full-data deployment plots and explainability.
+    print("\n" + "=" * 70)
+    print("HELD-OUT TEST EVALUATION COMPLETE")
+    print("=" * 70)
+    sys.exit(0)

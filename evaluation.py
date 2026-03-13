@@ -127,7 +127,7 @@ plt.tight_layout()
 pictures_dir = "pictures"
 os.makedirs(pictures_dir, exist_ok=True)
 
-eval_png_path = os.path.join(pictures_dir, "02_evaluation_test.png")
+eval_png_path = os.path.join(pictures_dir, "02_evaluation_full.png")
 plt.savefig(eval_png_path, dpi=150, bbox_inches='tight')
 plt.close()
 print(f"Saved: {eval_png_path}")
