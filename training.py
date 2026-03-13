@@ -7,6 +7,7 @@ import seaborn as sns
 from sklearn.model_selection import StratifiedKFold, cross_val_score
 from sklearn.ensemble import GradientBoostingClassifier, RandomForestClassifier
 from sklearn.linear_model import LogisticRegression
+from sklearn.neural_network import MLPClassifier
 from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import (
     classification_report, confusion_matrix, roc_auc_score, roc_curve,
@@ -66,6 +67,10 @@ models = {
     'Gradient Boosting': ('raw', GradientBoostingClassifier(
         n_estimators=200, max_depth=4, learning_rate=0.1,
         subsample=0.8, random_state=42
+    )),
+    'Neural Network (scaled)': ('scaled', MLPClassifier(
+        hidden_layer_sizes=(64, 32), activation='relu', max_iter=500,
+        random_state=42, early_stopping=True, validation_fraction=0.1
     ))
 }
 
