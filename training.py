@@ -189,3 +189,40 @@ print(f"Rule (strict): catches {bl_caught}/{n_defaults} defaults ({bl_caught/n_d
 print(f"\nNet improvement:")
 print(f"  Additional defaults caught: {ml_caught - bl_caught}")
 print(f"  Additional good applicants wrongly denied: {ml_wrongly_denied - bl_wrongly_denied}")
+
+# ============================================================================
+# 3. SAVE MODEL OUTPUTS FOR NEXT STEPS
+# ============================================================================
+print("\n" + "=" * 70)
+print("SAVING MODEL OUTPUTS")
+print("=" * 70)
+
+import joblib
+
+# Save the trained model and scaler
+joblib.dump(final_model, 'trained_model.joblib')
+joblib.dump(scaler, 'scaler.joblib')
+
+# Save predictions, probabilities, and key settings
+output_df = model_df.copy()
+output_df['y_prob'] = y_prob
+output_df['y_pred'] = y_pred
+output_df.to_csv('model_outputs.csv', index=False)
+
+# Save key info as a simple config
+config = {
+    'best_model_name': best_name,
+    'best_data_type': best_data_type,
+    'optimal_threshold': float(optimal_threshold),
+    'feature_cols': feature_cols,
+    'auc_roc': float(ml_metrics['AUC-ROC']),
+    'bl_auc': float(bl_auc)
+}
+import json
+with open('model_config.json', 'w') as f:
+    json.dump(config, f, indent=2)
+
+print(f"Saved: trained_model.joblib (the {best_name} model)")
+print(f"Saved: scaler.joblib (StandardScaler)")
+print(f"Saved: model_outputs.csv (predictions + probabilities for all {len(output_df)} applicants)")
+print(f"Saved: model_config.json (threshold={optimal_threshold}, AUC={ml_metrics['AUC-ROC']:.4f})")
