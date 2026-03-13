@@ -41,7 +41,7 @@ print(resolved.groupby('employment_status')['actual_outcome'].apply(
     lambda x: (x == 'defaulted').mean()
 ).round(3))
 
-# ---------- EDA Plots ----------
+# EDA Plots
 fig, axes = plt.subplots(2, 3, figsize=(18, 11))
 fig.suptitle('Exploratory Data Analysis — Loan Applications', fontsize=16, fontweight='bold')
 
@@ -114,13 +114,7 @@ print("\n" + "=" * 70)
 print("SECTION 2: FEATURE ENGINEERING & DATA PREPARATION")
 print("=" * 70)
 
-# Decision: Exclude 'ongoing' applications
-# Rationale: They have no ground truth. Including them would mean either:
-#   a) Treating them as 'repaid' (biases toward false negatives)
-#   b) Treating them as a separate class (changes the problem)
-#   c) Imputing outcomes (introduces noise)
-# Excluding is the safest choice, but we note the survivorship bias:
-# ongoing apps are likely newer and may differ in risk profile.
+# As we are looking to predict default versus repaid, ongoing can only be observed in the future. Therefore, we will exclude them from the modeling set.
 print(f"\nExcluding {(df['actual_outcome'] == 'ongoing').sum()} ongoing applications (no ground truth)")
 model_df = df[df['actual_outcome'] != 'ongoing'].copy()
 print(f"Modeling dataset: {len(model_df)} rows")
@@ -137,45 +131,39 @@ model_df['income_ratio'] = np.where(
     model_df['documented_monthly_income'] / model_df['stated_monthly_income'].clip(lower=1),
     np.nan
 )
-model_df['income_discrepancy'] = np.where(
-    model_df['documented_monthly_income'].notna(),
-    (model_df['stated_monthly_income'] - model_df['documented_monthly_income']).abs() / model_df['stated_monthly_income'].clip(lower=1),
-    -1  # Flag for missing docs
-)
+
 model_df['suspected_misrepresentation'] = (
     model_df['documented_monthly_income'].notna() & 
     (model_df['documented_monthly_income'] < model_df['stated_monthly_income'] * 0.5)
 ).astype(int)
 
 # 2. Affordability features
-model_df['loan_to_income_ratio'] = model_df['loan_amount'] / model_df['stated_monthly_income'].clip(lower=1)
 model_df['income_covers_loan_3x'] = (model_df['stated_monthly_income'] >= 3 * model_df['loan_amount']).astype(int)
 
 # 3. Account health features
 model_df['withdrawal_to_deposit_ratio'] = (
     model_df['monthly_withdrawals'] / model_df['monthly_deposits'].clip(lower=1)
 )
-model_df['net_monthly_flow'] = model_df['monthly_deposits'] - model_df['monthly_withdrawals']
-model_df['balance_to_loan_ratio'] = model_df['bank_ending_balance'] / model_df['loan_amount'].clip(lower=1)
 model_df['low_balance'] = (model_df['bank_ending_balance'] < 500).astype(int)
 
 # 4. Employment encoding (ordinal — but we'll discuss this in fairness)
 emp_map = {'employed': 2, 'self_employed': 1, 'unemployed': 0}
 model_df['employment_encoded'] = model_df['employment_status'].map(emp_map)
 
-# Fill NaN in documented_monthly_income for feature computation
-model_df['documented_monthly_income_filled'] = model_df['documented_monthly_income'].fillna(0)
 
-# Feature list
+#features
 feature_cols = [
-    'stated_monthly_income', 'documented_monthly_income_filled', 'loan_amount',
+    'stated_monthly_income', 'loan_amount',
     'bank_ending_balance', 'bank_has_overdrafts', 'bank_has_consistent_deposits',
     'monthly_withdrawals', 'monthly_deposits', 'num_documents_submitted',
     # Engineered features
-    'has_documentation', 'income_ratio', 'income_discrepancy',
-    'suspected_misrepresentation', 'loan_to_income_ratio', 'income_covers_loan_3x',
-    'withdrawal_to_deposit_ratio', 'net_monthly_flow', 'balance_to_loan_ratio',
-    'low_balance', 'employment_encoded'
+    'has_documentation',
+    'income_ratio',
+    'income_covers_loan_3x',
+    'suspected_misrepresentation',
+    'withdrawal_to_deposit_ratio',
+    'low_balance',
+    'employment_encoded'
 ]
 
 # Handle remaining NaN in income_ratio (where docs are missing)
@@ -195,11 +183,9 @@ print("\n" + "=" * 70)
 print("SECTION 3: SAVING PROCESSED DATA")
 print("=" * 70)
 
-# Save the full processed dataframe (includes features + metadata for fairness analysis)
 model_df.to_csv('processed_data.csv', index=False)
 print(f"Saved: processed_data.csv ({len(model_df)} rows)")
 
-# Save feature matrix and target separately
 X.to_csv('features.csv', index=False)
 y.to_csv('target.csv', index=False)
 print(f"Saved: features.csv ({X.shape[0]} rows, {X.shape[1]} features)")
