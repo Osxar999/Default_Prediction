@@ -1,3 +1,4 @@
+import os
 import pandas as pd
 import numpy as np
 import matplotlib
@@ -25,9 +26,10 @@ print("=" * 70)
 print("LOADING PROCESSED DATA")
 print("=" * 70)
 
-model_df = pd.read_csv('processed_data.csv')
-X = pd.read_csv('features.csv')
-y = pd.read_csv('target.csv').squeeze()
+data_dir = "data"
+model_df = pd.read_csv(os.path.join(data_dir, "processed_data.csv"))
+X = pd.read_csv(os.path.join(data_dir, "features.csv"))
+y = pd.read_csv(os.path.join(data_dir, "target.csv")).squeeze()
 
 feature_cols = list(X.columns)
 
@@ -198,16 +200,20 @@ print("SAVING MODEL OUTPUTS")
 print("=" * 70)
 
 import joblib
+import json
+
+model_dir = "model"
+os.makedirs(model_dir, exist_ok=True)
 
 # Save the trained model and scaler
-joblib.dump(final_model, 'trained_model.joblib')
-joblib.dump(scaler, 'scaler.joblib')
+joblib.dump(final_model, os.path.join(model_dir, "trained_model.joblib"))
+joblib.dump(scaler, os.path.join(model_dir, "scaler.joblib"))
 
 # Save predictions, probabilities, and key settings
 output_df = model_df.copy()
 output_df['y_prob'] = y_prob
 output_df['y_pred'] = y_pred
-output_df.to_csv('model_outputs.csv', index=False)
+output_df.to_csv(os.path.join(model_dir, "model_outputs.csv"), index=False)
 
 # Save key info as a simple config
 config = {
@@ -218,11 +224,10 @@ config = {
     'auc_roc': float(ml_metrics['AUC-ROC']),
     'bl_auc': float(bl_auc)
 }
-import json
-with open('model_config.json', 'w') as f:
+with open(os.path.join(model_dir, "model_config.json"), 'w') as f:
     json.dump(config, f, indent=2)
 
-print(f"Saved: trained_model.joblib (the {best_name} model)")
-print(f"Saved: scaler.joblib (StandardScaler)")
-print(f"Saved: model_outputs.csv (predictions + probabilities for all {len(output_df)} applicants)")
-print(f"Saved: model_config.json (threshold={optimal_threshold}, AUC={ml_metrics['AUC-ROC']:.4f})")
+print(f"Saved: {os.path.join(model_dir, 'trained_model.joblib')} (the {best_name} model)")
+print(f"Saved: {os.path.join(model_dir, 'scaler.joblib')} (StandardScaler)")
+print(f"Saved: {os.path.join(model_dir, 'model_outputs.csv')} (predictions + probabilities for all {len(output_df)} applicants)")
+print(f"Saved: {os.path.join(model_dir, 'model_config.json')} (threshold={optimal_threshold}, AUC={ml_metrics['AUC-ROC']:.4f})")

@@ -1,3 +1,4 @@
+import os
 import pandas as pd
 import numpy as np
 import matplotlib
@@ -103,9 +104,14 @@ axes[1, 2].set_xticklabels(axes[1, 2].get_xticklabels(), rotation=0)
 axes[1, 2].legend(title='Outcome')
 
 plt.tight_layout()
-plt.savefig('01_eda_overview.png', dpi=150, bbox_inches='tight')
+
+pictures_dir = "pictures"
+os.makedirs(pictures_dir, exist_ok=True)
+
+eda_png_path = os.path.join(pictures_dir, "01_eda_overview.png")
+plt.savefig(eda_png_path, dpi=150, bbox_inches='tight')
 plt.close()
-print("\nSaved: 01_eda_overview.png")
+print(f"\nSaved: {eda_png_path}")
 
 # ============================================================================
 # 2. FEATURE ENGINEERING & DATA PREPARATION
@@ -183,13 +189,15 @@ print("\n" + "=" * 70)
 print("SECTION 3: SAVING PROCESSED DATA")
 print("=" * 70)
 
-model_df.to_csv('processed_data.csv', index=False)
-print(f"Saved: processed_data.csv ({len(model_df)} rows)")
+os.makedirs("data", exist_ok=True)
 
-X.to_csv('features.csv', index=False)
-y.to_csv('target.csv', index=False)
-print(f"Saved: features.csv ({X.shape[0]} rows, {X.shape[1]} features)")
-print(f"Saved: target.csv ({len(y)} rows)")
+model_df.to_csv(os.path.join("data", "processed_data.csv"), index=False)
+print(f"Saved: data/processed_data.csv ({len(model_df)} rows)")
+
+X.to_csv(os.path.join("data", "features.csv"), index=False)
+y.to_csv(os.path.join("data", "target.csv"), index=False)
+print(f"Saved: data/features.csv ({X.shape[0]} rows, {X.shape[1]} features)")
+print(f"Saved: data/target.csv ({len(y)} rows)")
 print(f"\nFeature columns saved: {feature_cols}")
 
 print("\n" + "=" * 70)
