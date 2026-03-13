@@ -1,0 +1,24 @@
+{
+  "best_model_name": "Logistic Regression (scaled)",
+  "best_data_type": "scaled",
+  "optimal_threshold": 0.48999999999999977,
+  "feature_cols": [
+    "stated_monthly_income",
+    "loan_amount",
+    "bank_ending_balance",
+    "bank_has_overdrafts",
+    "bank_has_consistent_deposits",
+    "monthly_withdrawals",
+    "monthly_deposits",
+    "num_documents_submitted",
+    "has_documentation",
+    "income_ratio",
+    "income_covers_loan_3x",
+    "suspected_misrepresentation",
+    "withdrawal_to_deposit_ratio",
+    "low_balance",
+    "employment_encoded"
+  ],
+  "auc_roc": 0.7450649876704638,
+  "bl_auc": 0.7063900397245575
+}
