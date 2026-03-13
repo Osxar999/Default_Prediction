@@ -18,8 +18,8 @@
     "low_balance",
     "employment_encoded"
   ],
-  "auc_roc_test": 0.7280294711487371,
-  "auc_roc_full": 0.7448532181155352,
+  "auc_roc_test": 0.7280294711487373,
+  "auc_roc_full": 0.7449001200974993,
   "bl_auc_test": 0.7218129007119833,
   "bl_auc_full": 0.7063900397245575,
   "test_metrics": {
@@ -32,9 +32,9 @@
     "False Positives": 135,
     "True Negatives": 124,
     "False Negatives": 13,
-    "AUC-ROC": 0.7280294711487371
+    "AUC-ROC": 0.7280294711487373
   },
-  "validation_auc": 0.7565251404594268,
+  "validation_auc": 0.756631818505085,
   "split_sizes": {
     "train": 1101,
     "val": 367,
