@@ -1,0 +1,44 @@
+{
+  "best_model_name": "Logistic Regression (scaled)",
+  "optimal_threshold": 0.4199999999999998,
+  "feature_cols": [
+    "stated_monthly_income",
+    "loan_amount",
+    "bank_ending_balance",
+    "bank_has_overdrafts",
+    "bank_has_consistent_deposits",
+    "monthly_withdrawals",
+    "monthly_deposits",
+    "num_documents_submitted",
+    "has_documentation",
+    "income_ratio",
+    "income_covers_loan_3x",
+    "suspected_misrepresentation",
+    "withdrawal_to_deposit_ratio",
+    "low_balance",
+    "employment_encoded"
+  ],
+  "auc_roc_test": 0.7280294711487371,
+  "auc_roc_full": 0.7448532181155352,
+  "bl_auc_test": 0.7218129007119833,
+  "bl_auc_full": 0.7063900397245575,
+  "test_metrics": {
+    "Precision (default)": 0.4155844155844156,
+    "Recall (default)": 0.8807339449541285,
+    "F1 (default)": 0.5647058823529412,
+    "FPR (good applicants wrongly denied)": 0.5212355212355212,
+    "FNR (defaults that slipped through)": 0.11926605504587157,
+    "True Positives": 96,
+    "False Positives": 135,
+    "True Negatives": 124,
+    "False Negatives": 13,
+    "AUC-ROC": 0.7280294711487371
+  },
+  "validation_auc": 0.7565251404594268,
+  "split_sizes": {
+    "train": 1101,
+    "val": 367,
+    "test": 368
+  },
+  "notes": "Model selected with CV on train only; threshold selected on validation only; final evaluation on held-out test set."
+}
